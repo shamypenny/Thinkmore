@@ -1,0 +1,181 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  STUDENT
+  PARENT
+  TEACHER
+  ADMIN
+}
+
+model User {
+  id             String             @id @default(cuid())
+  email          String             @unique
+  name           String
+  role           Role
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  studentProfile StudentProfile?
+  parentProfile  ParentProfile?
+  teacherProfile TeacherProfile?
+  submissions    Submission[]
+  guidedSessions GuidedSession[]
+  learningMetric LearningMetric[]
+}
+
+model StudentProfile {
+  id                String                    @id @default(cuid())
+  userId            String                    @unique
+  gradeLabel        String
+  independenceScore Int                       @default(0)
+  parentId          String?
+  user              User                      @relation(fields: [userId], references: [id])
+  parent            ParentProfile?            @relation(fields: [parentId], references: [id])
+  enrollments       Enrollment[]
+  knowledgeMastery  StudentKnowledgeMastery[]
+}
+
+model ParentProfile {
+  id       String           @id @default(cuid())
+  userId   String           @unique
+  user     User             @relation(fields: [userId], references: [id])
+  children StudentProfile[]
+}
+
+model TeacherProfile {
+  id      String              @id @default(cuid())
+  userId  String              @unique
+  subject String
+  user    User                @relation(fields: [userId], references: [id])
+  classes ClassRoom[]
+  advice  TeachingSuggestion[]
+}
+
+model ClassRoom {
+  id                String               @id @default(cuid())
+  name              String
+  homeroomTeacherId String
+  createdAt         DateTime             @default(now())
+  teacher           TeacherProfile       @relation(fields: [homeroomTeacherId], references: [id])
+  enrollments       Enrollment[]
+  assignments       Assignment[]
+  teachingAdvice    TeachingSuggestion[]
+}
+
+model Enrollment {
+  id          String         @id @default(cuid())
+  studentId   String
+  classRoomId String
+  createdAt   DateTime       @default(now())
+  student     StudentProfile @relation(fields: [studentId], references: [id])
+  classRoom   ClassRoom      @relation(fields: [classRoomId], references: [id])
+
+  @@unique([studentId, classRoomId])
+}
+
+model Assignment {
+  id          String       @id @default(cuid())
+  classRoomId String
+  title       String
+  subject     String
+  createdAt   DateTime     @default(now())
+  classRoom   ClassRoom    @relation(fields: [classRoomId], references: [id])
+  submissions Submission[]
+}
+
+model Submission {
+  id               String             @id @default(cuid())
+  assignmentId     String
+  userId           String
+  status           String
+  submittedAt      DateTime           @default(now())
+  assignment       Assignment         @relation(fields: [assignmentId], references: [id])
+  user             User               @relation(fields: [userId], references: [id])
+  images           SubmissionImage[]
+  correctionResult CorrectionResult?
+}
+
+model SubmissionImage {
+  id           String     @id @default(cuid())
+  submissionId String
+  fileName     String
+  fileUrl      String
+  submission   Submission @relation(fields: [submissionId], references: [id])
+}
+
+model CorrectionResult {
+  id            String     @id @default(cuid())
+  submissionId  String     @unique
+  summary       String
+  score         Int?
+  knowledgeTags String
+  guidance      String
+  correctionAt  DateTime   @default(now())
+  submission    Submission @relation(fields: [submissionId], references: [id])
+}
+
+model KnowledgePoint {
+  id          String                    @id @default(cuid())
+  name        String
+  subject     String
+  description String?
+  mastery     StudentKnowledgeMastery[]
+}
+
+model StudentKnowledgeMastery {
+  id               String         @id @default(cuid())
+  studentId        String
+  knowledgePointId String
+  mastery          Int
+  trendLabel       String
+  student          StudentProfile @relation(fields: [studentId], references: [id])
+  knowledgePoint   KnowledgePoint @relation(fields: [knowledgePointId], references: [id])
+
+  @@unique([studentId, knowledgePointId])
+}
+
+model GuidedSession {
+  id        String                @id @default(cuid())
+  userId    String
+  topic     String
+  status    String
+  startedAt DateTime              @default(now())
+  user      User                  @relation(fields: [userId], references: [id])
+  messages  GuidedMessageRecord[]
+}
+
+model GuidedMessageRecord {
+  id              String        @id @default(cuid())
+  guidedSessionId String
+  sender          String
+  content         String
+  createdAt       DateTime      @default(now())
+  guidedSession   GuidedSession @relation(fields: [guidedSessionId], references: [id])
+}
+
+model LearningMetric {
+  id          String   @id @default(cuid())
+  userId      String
+  metricType  String
+  metricValue Int
+  recordedAt  DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id])
+}
+
+model TeachingSuggestion {
+  id          String         @id @default(cuid())
+  classRoomId String
+  teacherId   String
+  title       String
+  action      String
+  impact      String
+  createdAt   DateTime       @default(now())
+  classRoom   ClassRoom      @relation(fields: [classRoomId], references: [id])
+  teacher     TeacherProfile @relation(fields: [teacherId], references: [id])
+}
