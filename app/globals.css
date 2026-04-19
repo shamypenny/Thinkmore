@@ -1,0 +1,21 @@
+﻿@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  @apply min-h-screen bg-slate-50 text-slate-900 antialiased;
+  background-image: radial-gradient(circle at top left, rgba(58, 124, 165, 0.12), transparent 24%),
+    radial-gradient(circle at bottom right, rgba(185, 227, 198, 0.22), transparent 26%);
+}
+
+main {
+  @apply mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8;
+}
+
+.card-grid {
+  @apply grid gap-4 md:grid-cols-2 xl:grid-cols-4;
+}
